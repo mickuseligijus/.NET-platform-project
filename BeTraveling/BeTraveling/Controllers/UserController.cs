@@ -1,7 +1,6 @@
 ﻿using BeTraveling.Context;
 using BeTraveling.Models;
 using BeTraveling.Tools;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BeTraveling.Controllers
@@ -21,28 +20,48 @@ namespace BeTraveling.Controllers
         [Route("login")]
         public async Task<IActionResult> UserLogin([FromBody] User user)
         {
-            string password = Password.HashPassword(user.Password);
-            var dbUser = _context.Users.Where(u => u.UserName == user.UserName && u.Password == password).FirstOrDefault();
-
-            if (dbUser == null)
+            try
             {
-                return BadRequest("Username or password is incorrect");
+                string password = Password.HashPassword(user.Password);
+                var dbUser = _context.Users.Where(u => u.UserName == user.UserName && u.Password == password).FirstOrDefault();
+
+                if (dbUser == null)
+                {
+                    return BadRequest("Username or password is incorrect");
+                }
+                return Ok("You are loged in");
             }
-            return Ok("You are loged in");
+            catch(Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
+        [HttpPost]
+        [Route("register")]
         public async Task<IActionResult> UserRegistration([FromBody] User user)
         {
-            var dbUser = _context.Users.Where(u => u.UserName == user.UserName).FirstOrDefault();
-            if(dbUser != null)
+
+            try
             {
-                return BadRequest("Username already exists");
+                var dbUser = _context.Users.Where(u => u.UserName == user.UserName).FirstOrDefault();
+                if (dbUser != null)
+                {
+                    return BadRequest("Username already exists");
+                }
+
+                user.Password = Password.HashPassword(user.Password);
+                user.Status = 1;
+                user.CreatedDate = DateTime.Now;
+                _context.Add(user);
+
+                await _context.SaveChangesAsync();
+                return Ok("User successfully registered");
             }
-
-            user.Password = Password.HashPassword(user.Password);
-            _context.Add(user);
-
-            await _context.SaveChangesAsync();
-            return Ok("");
+            catch(Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+            
         }
 
     }
