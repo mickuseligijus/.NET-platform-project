@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BeTraveling.Controllers
@@ -28,6 +29,13 @@ namespace BeTraveling.Controllers
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToArray();
+        }
+        [Authorize]
+        [HttpGet]
+        [Route("X")]
+        public IActionResult X()
+        {
+            return Ok("XD");
         }
     }
 }

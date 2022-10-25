@@ -60,3 +60,4 @@ D:\Programu_sistemos\7_semestras\.NET-platform-project\BeTraveling\BeTraveling\o
 D:\Programu_sistemos\7_semestras\.NET-platform-project\BeTraveling\BeTraveling\obj\Debug\net6.0\BeTraveling.pdb
 D:\Programu_sistemos\7_semestras\.NET-platform-project\BeTraveling\BeTraveling\obj\Debug\net6.0\BeTraveling.genruntimeconfig.cache
 D:\Programu_sistemos\7_semestras\.NET-platform-project\BeTraveling\BeTraveling\obj\Debug\net6.0\ref\BeTraveling.dll
+D:\Programu_sistemos\7_semestras\.NET-platform-project\BeTraveling\BeTraveling\bin\Debug\net6.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
