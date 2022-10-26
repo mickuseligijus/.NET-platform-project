@@ -11,11 +11,11 @@ namespace BeTraveling.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class LoginController : ControllerBase
     {
         private readonly BeTravelingDbContext _context;
         private readonly IConfiguration _configuration;
-        public UserController(BeTravelingDbContext context, IConfiguration configuration)
+        public LoginController(BeTravelingDbContext context, IConfiguration configuration)
         {
             _context = context;
             _configuration = configuration;
@@ -23,7 +23,7 @@ namespace BeTraveling.Controllers
 
         [HttpPost]
         [Route("login")]
-        public async Task<IActionResult> UserLogin([FromBody] User user)
+        public IActionResult UserLogin([FromBody] User user)
         {
             try
             {
@@ -37,7 +37,8 @@ namespace BeTraveling.Controllers
                 List<Claim> autClaims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, dbUser.UserName),
-                    new Claim("userId", dbUser.Id.ToString())
+                    new Claim(ClaimTypes.NameIdentifier, dbUser.Id.ToString()),
+                    new Claim(ClaimTypes.Role, dbUser.Role)
                 };
                 
                 var token = getToken(autClaims);
@@ -45,6 +46,7 @@ namespace BeTraveling.Controllers
                 return Ok(new
                 {
                     token = new JwtSecurityTokenHandler().WriteToken(token),
+                    creation = token.ValidFrom,
                     expiration = token.ValidTo
                 });
             }
@@ -67,8 +69,6 @@ namespace BeTraveling.Controllers
                 }
 
                 user.Password = Password.HashPassword(user.Password);
-                user.Status = 1;
-                user.CreatedDate = DateTime.Now;
                 _context.Add(user);
 
                 await _context.SaveChangesAsync();

@@ -10,7 +10,15 @@ namespace BeTraveling.Context
         {
                 
         }
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            builder.Entity<UserInfo>(entity => {
+                entity.HasIndex(e => e.UserId).IsUnique();
+            });
+        }
+
         public DbSet<User> Users { get; set; }
+        public DbSet<UserInfo> UsersInfo { get; set; }
         
     }
 }
