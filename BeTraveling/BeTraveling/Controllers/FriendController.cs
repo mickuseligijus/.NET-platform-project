@@ -36,13 +36,52 @@ namespace BeTraveling.Controllers
                 }
                 friend.Status = 0;
                 await _context.SaveChangesAsync();
-                return Ok("Friend request has been approved");
+                return Ok("Friend request approved");
             }
             catch(Exception e)
             {
                 return BadRequest(e.Message);
             }
 
+        }
+        [HttpDelete]
+        [Authorize]
+        [Route("invitation/decline/{id}")]
+        public async Task<IActionResult> RejectInvitation(int id)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+            {
+                return BadRequest("User was not found");
+            }
+            var friend = _context.Friends.Where(friendship => friendship.UserId2 == currentUser.Id && friendship.UserId1 == id && friendship.Status == 1).FirstOrDefault();
+            if (friend == null)
+            {
+                return BadRequest("There is no such invitation");
+            }
+            _context.Remove(friend);
+            await _context.SaveChangesAsync();
+            return Ok("Friend request rejected");
+        }
+
+        [HttpDelete]
+        [Authorize]
+        [Route("remove/{id}")]
+        public async Task<IActionResult> RemoveFromFriends(int id)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+            {
+                return BadRequest("User was not found");
+            }
+            var friend = _context.Friends.Where(friendship => ((friendship.UserId1 == currentUser.Id && friendship.UserId2 == id) || (friendship.UserId2 == currentUser.Id && friendship.UserId1 == id)) && friendship.Status == 0 ).FirstOrDefault();
+            if (friend == null)
+            {
+                return BadRequest("There is no such friendship");
+            }
+            _context.Remove(friend);
+            await _context.SaveChangesAsync();
+            return Ok("Friend has been removed");
         }
 
         [HttpGet]
@@ -61,13 +100,13 @@ namespace BeTraveling.Controllers
                     from friend in _context.Friends
                     join user in _context.Users on friend.UserId2 equals user.Id
                     where friend.UserId1 == currentUser.Id && friend.Status == 0
-                    select user.UserName;
+                    select new { user.UserName, user.Id };
 
                 var friends2 =
                     from friend in _context.Friends
                     join user in _context.Users on friend.UserId1 equals user.Id
                     where friend.UserId2 == currentUser.Id && friend.Status == 0
-                    select user.UserName;
+                    select new { user.UserName, user.Id };
 
                 var friends = friends1.Union(friends2);
 
