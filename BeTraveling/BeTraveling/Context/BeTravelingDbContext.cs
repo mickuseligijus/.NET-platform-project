@@ -15,10 +15,15 @@ namespace BeTraveling.Context
             builder.Entity<UserInfo>(entity => {
                 entity.HasIndex(e => e.UserId).IsUnique();
             });
+
+            builder.Entity<Friend>(entity => {
+                entity.HasIndex(e => new { e.UserId1,e.UserId2 }).IsUnique();
+            });
         }
 
         public DbSet<User> Users { get; set; }
         public DbSet<UserInfo> UsersInfo { get; set; }
+        public DbSet<Friend> Friends { get; set; }
         
     }
 }

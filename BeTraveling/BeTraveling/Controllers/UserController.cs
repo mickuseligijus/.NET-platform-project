@@ -22,7 +22,8 @@ namespace BeTraveling.Controllers
         [Route("people")]
         public IActionResult Get()
         {
-            var availableUsers = _context.Users.Where(user => user.Role.Equals("Traveler")).Select(user => user.UserName).ToList();
+            var currentUser = GetCurrentUser();
+            var availableUsers = _context.Users.Where(user => user.Id!= currentUser.Id && user.Role.Equals("Traveler")).Select(user => new { user.UserName, user.Id }).ToList();
             return Ok(availableUsers);
         }
         [HttpPost]
