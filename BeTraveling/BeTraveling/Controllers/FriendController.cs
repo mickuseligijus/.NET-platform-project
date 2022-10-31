@@ -46,7 +46,7 @@ namespace BeTraveling.Controllers
         }
         [HttpDelete]
         [Authorize]
-        [Route("invitation/decline/{id}")]
+        [Route("invitation/reject/{id}")]
         public async Task<IActionResult> RejectInvitation(int id)
         {
             var currentUser = GetCurrentUser();
