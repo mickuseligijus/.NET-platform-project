@@ -24,6 +24,11 @@ namespace BeTraveling.Context
         public DbSet<User> Users { get; set; }
         public DbSet<UserInfo> UsersInfo { get; set; }
         public DbSet<Friend> Friends { get; set; }
+
+        public DbSet<Post> Posts { get; set; }
+        public DbSet<Comment> Comments { get; set; }
+        public DbSet<ReactionComment> CommentReactions { get; set; }
+        public DbSet<ReactionPost> PostReactions { get; set; }
         
     }
 }
