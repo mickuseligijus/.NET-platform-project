@@ -2,6 +2,8 @@
 using BeTraveling.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Configuration;
 using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
@@ -67,6 +69,33 @@ namespace BeTraveling.Controllers
             return BadRequest("Incorrect reaction type");
         }
 
+        [HttpGet]
+        [Authorize]
+        [Route("friendsPosts")]
+        public IActionResult GetFriendsPosts()
+        {
+            var currentUser = GetCurrentUser();
+            var v1 = new SqlParameter("@UserId1", currentUser.Id);
+            var v2 = new SqlParameter("@UserId2", currentUser.Id);
+
+            var posts = _context.Posts.FromSqlInterpolated($"SELECT * FROM posts WHERE posts.UserId IN ((SELECT userId2 from friends Where @UserId1 = {v1} ) Union (SELECT userId1 from friends Where @UserId2 = {v2}))").ToList();
+
+            var accumulator = new List<object>()
+            .Select(t => new { Post = default(Post), ReactionNumber = default(int), CommentsNumber = default(int) }).ToList();
+
+            if (posts != null)
+                foreach (var post in posts)
+                {
+                    var reactionsNo = _context.PostReactions.Where(reaction => post.Id == reaction.PostId).Count();
+                    var commentsNo = _context.Comments.Where(comment => post.Id == comment.PostId).Count();
+
+                    var result = new { Post = post, ReactionNumber = reactionsNo, CommentsNumber = commentsNo };
+                    accumulator.Add(result);
+
+                }
+
+            return Ok(accumulator);
+        }
 
         [HttpGet]
         [Authorize]
