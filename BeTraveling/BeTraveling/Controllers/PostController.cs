@@ -3,6 +3,7 @@ using BeTraveling.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Configuration;
+using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 
@@ -32,6 +33,40 @@ namespace BeTraveling.Controllers
             await _context.SaveChangesAsync();
             return Ok("Post was posted successfully");
         }
+        [HttpPost]
+        [Authorize]
+        [Route("react/{id}/{reaction}")]
+        public async Task<IActionResult> ReactPost(int id, string reaction)
+        {
+            var currentUser = GetCurrentUser();
+            var reactions = new List<string> { "LIKE", "SAD", "FUNNY", "ANGRY", "LOVE" };
+            if (reactions.Contains(reaction.ToUpper()))
+            {
+                if(_context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id).FirstOrDefault() == null)
+                {
+                    _context.PostReactions.Add(new ReactionPost { ReactionType = reaction.ToUpper(), PostId = id, UserId = currentUser.Id });
+                    await _context.SaveChangesAsync();
+                    return Ok("Reaction saved");
+                }
+                else if (_context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType != reaction.ToUpper()).FirstOrDefault() != null)
+                {
+                    var postReaction = _context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType != reaction.ToUpper()).FirstOrDefault();
+                    postReaction.ReactionType = reaction.ToUpper();
+                    await _context.SaveChangesAsync();
+                    return Ok("Reaction changed");
+                }
+                else if (_context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType == reaction.ToUpper()).FirstOrDefault() != null)
+                {
+                    var postReaction = _context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType == reaction.ToUpper()).FirstOrDefault();
+                    _context.PostReactions.Remove(postReaction);
+                    await _context.SaveChangesAsync();
+                    return Ok("Reaction removed");
+                }
+            }
+
+            return BadRequest("Incorrect reaction type");
+        }
+
 
         [HttpGet]
         [Authorize]
