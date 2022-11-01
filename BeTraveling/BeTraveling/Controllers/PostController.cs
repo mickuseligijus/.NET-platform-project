@@ -4,10 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Configuration;
-using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
-using System.Text.RegularExpressions;
 
 namespace BeTraveling.Controllers
 {
@@ -22,51 +19,66 @@ namespace BeTraveling.Controllers
             _context = context;
         }
 
-
         [HttpPost]
         [Authorize]
         [Route("post")]
         public async Task<IActionResult> SharePost([FromBody] Post post)
         {
-            var currentUser = GetCurrentUser();
-            post.UserId = currentUser.Id;
-            post.Created = DateTime.Now;
-            _context.Add(post);
-            await _context.SaveChangesAsync();
-            return Ok("Post was posted successfully");
+            try
+            {
+                var currentUser = GetCurrentUser();
+                post.UserId = currentUser.Id;
+                post.Created = DateTime.Now;
+                _context.Add(post);
+                await _context.SaveChangesAsync();
+                return Ok("Post was posted successfully");
+            }
+            catch(Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
         }
         [HttpPost]
         [Authorize]
         [Route("react/{id}/{reaction}")]
         public async Task<IActionResult> ReactPost(int id, string reaction)
         {
-            var currentUser = GetCurrentUser();
-            var reactions = new List<string> { "LIKE", "SAD", "FUNNY", "ANGRY", "LOVE" };
-            if (reactions.Contains(reaction.ToUpper()))
+            try
             {
-                if(_context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id).FirstOrDefault() == null)
+                var currentUser = GetCurrentUser();
+                var reactions = new List<string> { "LIKE", "SAD", "FUNNY", "ANGRY", "LOVE" };
+                if (reactions.Contains(reaction.ToUpper()))
                 {
-                    _context.PostReactions.Add(new ReactionPost { ReactionType = reaction.ToUpper(), PostId = id, UserId = currentUser.Id });
-                    await _context.SaveChangesAsync();
-                    return Ok("Reaction saved");
+                    if (_context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id).FirstOrDefault() == null)
+                    {
+                        _context.PostReactions.Add(new ReactionPost { ReactionType = reaction.ToUpper(), PostId = id, UserId = currentUser.Id });
+                        await _context.SaveChangesAsync();
+                        return Ok("Reaction saved");
+                    }
+                    else if (_context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType != reaction.ToUpper()).FirstOrDefault() != null)
+                    {
+                        var postReaction = _context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType != reaction.ToUpper()).FirstOrDefault();
+                        postReaction.ReactionType = reaction.ToUpper();
+                        await _context.SaveChangesAsync();
+                        return Ok("Reaction changed");
+                    }
+                    else if (_context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType == reaction.ToUpper()).FirstOrDefault() != null)
+                    {
+                        var postReaction = _context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType == reaction.ToUpper()).FirstOrDefault();
+                        _context.PostReactions.Remove(postReaction);
+                        await _context.SaveChangesAsync();
+                        return Ok("Reaction removed");
+                    }
                 }
-                else if (_context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType != reaction.ToUpper()).FirstOrDefault() != null)
-                {
-                    var postReaction = _context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType != reaction.ToUpper()).FirstOrDefault();
-                    postReaction.ReactionType = reaction.ToUpper();
-                    await _context.SaveChangesAsync();
-                    return Ok("Reaction changed");
-                }
-                else if (_context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType == reaction.ToUpper()).FirstOrDefault() != null)
-                {
-                    var postReaction = _context.PostReactions.Where(r => r.UserId == currentUser.Id && r.PostId == id && r.ReactionType == reaction.ToUpper()).FirstOrDefault();
-                    _context.PostReactions.Remove(postReaction);
-                    await _context.SaveChangesAsync();
-                    return Ok("Reaction removed");
-                }
+
+                return BadRequest("Incorrect reaction type");
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
             }
 
-            return BadRequest("Incorrect reaction type");
         }
 
         [HttpGet]
@@ -74,27 +86,35 @@ namespace BeTraveling.Controllers
         [Route("friendsPosts")]
         public IActionResult GetFriendsPosts()
         {
-            var currentUser = GetCurrentUser();
-            var v1 = new SqlParameter("@UserId1", currentUser.Id);
-            var v2 = new SqlParameter("@UserId2", currentUser.Id);
+            try
+            {
+                var currentUser = GetCurrentUser();
+                var v1 = new SqlParameter("@UserId1", currentUser.Id);
+                var v2 = new SqlParameter("@UserId2", currentUser.Id);
 
-            var posts = _context.Posts.FromSqlInterpolated($"SELECT * FROM posts WHERE posts.UserId IN ((SELECT userId2 from friends Where @UserId1 = {v1} ) Union (SELECT userId1 from friends Where @UserId2 = {v2}))").ToList();
+                var posts = _context.Posts.FromSqlInterpolated($"SELECT * FROM posts WHERE posts.UserId IN ((SELECT userId2 from friends Where @UserId1 = {v1} ) Union (SELECT userId1 from friends Where @UserId2 = {v2}))").ToList();
 
-            var accumulator = new List<object>()
-            .Select(t => new { Post = default(Post), ReactionNumber = default(int), CommentsNumber = default(int) }).ToList();
+                var accumulator = new List<object>()
+                .Select(t => new { Post = default(Post), ReactionNumber = default(int), CommentsNumber = default(int) }).ToList();
 
-            if (posts != null)
-                foreach (var post in posts)
-                {
-                    var reactionsNo = _context.PostReactions.Where(reaction => post.Id == reaction.PostId).Count();
-                    var commentsNo = _context.Comments.Where(comment => post.Id == comment.PostId).Count();
+                if (posts != null)
+                    foreach (var post in posts)
+                    {
+                        var reactionsNo = _context.PostReactions.Where(reaction => post.Id == reaction.PostId).Count();
+                        var commentsNo = _context.Comments.Where(comment => post.Id == comment.PostId).Count();
 
-                    var result = new { Post = post, ReactionNumber = reactionsNo, CommentsNumber = commentsNo };
-                    accumulator.Add(result);
+                        var result = new { Post = post, ReactionNumber = reactionsNo, CommentsNumber = commentsNo };
+                        accumulator.Add(result);
 
-                }
+                    }
 
-            return Ok(accumulator);
+                return Ok(accumulator);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
         }
 
         [HttpGet]
@@ -102,24 +122,32 @@ namespace BeTraveling.Controllers
         [Route("myposts")]
         public IActionResult GetMyPosts()
         {
-            var currentUser = GetCurrentUser();
-            var posts = _context.Posts.Where(post => post.UserId == currentUser.Id).ToList();
-
-            var accumulator = new List<object>()
-            .Select(t => new {Post = default(Post), ReactionNumber = default(int), CommentsNumber = default(int) }).ToList();
-
-            if(posts != null)
-            foreach (var post in posts)
+            try
             {
-                var reactionsNo = _context.PostReactions.Where(reaction => post.Id == reaction.PostId).Count();
-                var commentsNo = _context.Comments.Where(comment => post.Id == comment.PostId).Count();
+                var currentUser = GetCurrentUser();
+                var posts = _context.Posts.Where(post => post.UserId == currentUser.Id).ToList();
 
-                var result = new {Post=post,  ReactionNumber = reactionsNo, CommentsNumber = commentsNo};
-                accumulator.Add(result);
+                var accumulator = new List<object>()
+                .Select(t => new { Post = default(Post), ReactionNumber = default(int), CommentsNumber = default(int) }).ToList();
 
+                if (posts != null)
+                    foreach (var post in posts)
+                    {
+                        var reactionsNo = _context.PostReactions.Where(reaction => post.Id == reaction.PostId).Count();
+                        var commentsNo = _context.Comments.Where(comment => post.Id == comment.PostId).Count();
+
+                        var result = new { Post = post, ReactionNumber = reactionsNo, CommentsNumber = commentsNo };
+                        accumulator.Add(result);
+
+                    }
+
+                return Ok(accumulator);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
             }
 
-            return Ok(accumulator);
         }
         private User GetCurrentUser()
         {
