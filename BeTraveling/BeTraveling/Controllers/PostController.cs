@@ -91,7 +91,7 @@ namespace BeTraveling.Controllers
                 var currentUser = GetCurrentUser();
                 var sqlParameter = new SqlParameter("@UserId", currentUser.Id);
 
-                var posts = _context.Posts.FromSqlInterpolated($"(SELECT * FROM posts WHERE posts.UserId IN ((SELECT userId2 from friends Where UserId1 = {sqlParameter} ) Union (SELECT userId1 from friends Where UserId2 = {sqlParameter}))) EXCEPT (SELECT * from posts where UserId = {sqlParameter})").ToList();
+                var posts = _context.Posts.FromSqlInterpolated($"(SELECT * FROM posts WHERE posts.UserId IN ((SELECT userId2 from friends Where UserId1 = {sqlParameter} AND Status = 0 ) Union (SELECT userId1 from friends Where UserId2 = {sqlParameter} AND Status = 0))) EXCEPT (SELECT * from posts where UserId = {sqlParameter})").ToList();
 
                 var accumulator = new List<object>()
                 .Select(t => new { Post = default(Post), ReactionNumber = default(int), CommentsNumber = default(int) }).ToList();
