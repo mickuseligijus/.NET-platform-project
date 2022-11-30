@@ -4,6 +4,14 @@ import {faCheck, faTimes, faInfoCircle} from "@fortawesome/free-solid-svg-icons"
 
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import axios from './api/axios';
+import Login from './Login';
+
+import {
+        BrowserRouter as Router,
+        Routes,
+        Route,
+        Link
+    } from 'react-router-dom';
 
 const USER_REGEX = /^[a-zA-Z][a-zA-Z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
@@ -51,7 +59,6 @@ const Register = () =>{
     const handleSubmit = async(e) => {
         e.preventDefault();
 
-        // try{
             console.log('V1');
             const response = await axios.post(REGISTER_URL,
                 JSON.stringify({UserName: user, Password:pwd}),
@@ -69,11 +76,6 @@ const Register = () =>{
                     console.log(error.response.data);
                     setErrMsg(error.response.data);
                 });
-            
-        // }
-        // catch(err){
-        //     setErrMsg('Registration failed');
-        // }
     }
     return (
         <>
@@ -82,13 +84,13 @@ const Register = () =>{
                 <section>
                     <h1>User successfully registered!</h1>
                     <p>
-                        <a href="#">Sign In</a>
+                        <a href="Login">Sign In</a>
                     </p>
                     </section>
             ):
             (
 
-         
+
         <section>
             <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
             <h1>Register</h1>
@@ -171,10 +173,13 @@ const Register = () =>{
             <p>
                 Already registered?<br/>
                 <span className="line">
-                    <a href="#" >Sign in</a>
+                    <a href="Login" >Sign in</a>
+                    
+
                 </span>
             </p>
         </section>
+
             )}
         </>
     )
