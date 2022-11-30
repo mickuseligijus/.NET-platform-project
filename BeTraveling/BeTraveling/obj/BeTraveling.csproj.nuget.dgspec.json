@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Programu_sistemos\\7_semestras\\.NET-platform-project\\BeTraveling\\BeTraveling\\BeTraveling.csproj": {}
+    "D:\\Programu_sistemos\\7_semestras\\.Net\\.NET-platform-project\\BeTraveling\\BeTraveling\\BeTraveling.csproj": {}
   },
   "projects": {
-    "D:\\Programu_sistemos\\7_semestras\\.NET-platform-project\\BeTraveling\\BeTraveling\\BeTraveling.csproj": {
+    "D:\\Programu_sistemos\\7_semestras\\.Net\\.NET-platform-project\\BeTraveling\\BeTraveling\\BeTraveling.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Programu_sistemos\\7_semestras\\.NET-platform-project\\BeTraveling\\BeTraveling\\BeTraveling.csproj",
+        "projectUniqueName": "D:\\Programu_sistemos\\7_semestras\\.Net\\.NET-platform-project\\BeTraveling\\BeTraveling\\BeTraveling.csproj",
         "projectName": "BeTraveling",
-        "projectPath": "D:\\Programu_sistemos\\7_semestras\\.NET-platform-project\\BeTraveling\\BeTraveling\\BeTraveling.csproj",
+        "projectPath": "D:\\Programu_sistemos\\7_semestras\\.Net\\.NET-platform-project\\BeTraveling\\BeTraveling\\BeTraveling.csproj",
         "packagesPath": "C:\\Users\\micku\\.nuget\\packages\\",
-        "outputPath": "D:\\Programu_sistemos\\7_semestras\\.NET-platform-project\\BeTraveling\\BeTraveling\\obj\\",
+        "outputPath": "D:\\Programu_sistemos\\7_semestras\\.Net\\.NET-platform-project\\BeTraveling\\BeTraveling\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\micku\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -40,6 +40,10 @@
         "net6.0": {
           "targetAlias": "net6.0",
           "dependencies": {
+            "Microsoft.AspNet.WebApi.Cors": {
+              "target": "Package",
+              "version": "[5.2.9, )"
+            },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
               "version": "[6.0.10, )"

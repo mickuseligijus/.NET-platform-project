@@ -55,6 +55,7 @@ namespace BeTraveling.Controllers
                 return BadRequest(e.Message);
             }
         }
+        
         [HttpPost]
         [Route("register")]
         public async Task<IActionResult> UserRegistration([FromBody] User user)
