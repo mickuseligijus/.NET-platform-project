@@ -3,6 +3,7 @@ using BeTraveling.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Security.Claims;
 
 namespace BeTraveling.Controllers
@@ -19,12 +20,58 @@ namespace BeTraveling.Controllers
         }
         [HttpGet]
         [Authorize]
+        [Route("info")]
+  /*      public int Id { get; set; }
+        public string Name { get; set; }
+        public string LastName { get; set; }
+        public bool HideLocation { get; set; }
+        public string Location { get; set; }
+        public bool IsDeleted { get; set; } = false;
+        [ForeignKey("User")]
+        public int UserId { get; set; }*/
+        public IActionResult GetInfo()
+        {
+            var currentUser = GetCurrentUser(); 
+            var userInfo = _context.UsersInfo.SingleOrDefault(user => user.UserId == currentUser.Id);
+
+            if(userInfo != null)
+            {
+                var info = new { Id = userInfo.Id, Name = userInfo.Name, LastName = userInfo.LastName, HideLocation = userInfo.HideLocation, Location = userInfo.Location };
+
+                return Ok(info);
+            }
+            return Ok(userInfo);
+        }
+
+        [HttpGet]
+        [Authorize]
         [Route("people")]
         public IActionResult Get()
         {
             var currentUser = GetCurrentUser();
-            var availableUsers = _context.Users.Where(user => user.Id!= currentUser.Id && user.Role.Equals("Traveler")).Select(user => new { user.UserName, user.Id }).ToList();
-            return Ok(availableUsers);
+            var availableUsers = _context.Users.Where(user => user.Id!= currentUser.Id && user.Role.Equals("Traveler") && user.Status==1).Select(user => new { user.UserName, user.Id }).ToList();
+
+            var result = new List<object>()
+            .Select(t => new
+            {
+                UserId = default(int),
+                UserName = default(string),
+                Friendship = default(string)
+            }).ToList();
+
+            foreach (var user in availableUsers)
+            {
+               var friendship = _context.Friends.FirstOrDefault(friend => (friend.UserId1 == currentUser.Id && friend.UserId2 == user.Id) || (friend.UserId2 == currentUser.Id && friend.UserId1 == user.Id));
+                if (friendship != null)
+                {
+
+                }
+                else
+                {
+                    result.Add(new { UserId = user.Id, UserName = user.UserName, Friendship = "Strangers" });
+                }
+            }
+            return Ok(result);
         }
         [HttpPost]
         [Authorize]
@@ -61,6 +108,9 @@ namespace BeTraveling.Controllers
             }
             
         }
+        
+
+
         private User GetCurrentUser()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;

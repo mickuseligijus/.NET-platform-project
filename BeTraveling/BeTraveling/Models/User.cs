@@ -13,7 +13,7 @@ namespace BeTraveling.Models
         [Required]
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         [Required]
-        public int Status { get; set; } = 1;
+        public int Status { get; set; } = 1; //1 - usual, 2 - banned
         [Required]
         public string Role { get; set; } = "Traveler";
 

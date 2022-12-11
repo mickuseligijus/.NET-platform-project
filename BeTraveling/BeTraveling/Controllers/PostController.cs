@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using System.Security.Claims;
 
 namespace BeTraveling.Controllers
@@ -38,6 +39,30 @@ namespace BeTraveling.Controllers
                 return BadRequest(e.Message);
             }
 
+        }
+        [HttpGet]
+        [Authorize]
+        [Route("reactions/{id}")]
+        public async Task<IActionResult> GetReactions(int id)
+        {
+            var reactions = _context.PostReactions.Where(reaction => reaction.PostId == id).ToList();
+            var result = new List<object>()
+                .Select(t => new
+                {
+                    Reaction = default(ReactionPost),
+                    UserName = default(string)
+                }).ToList();
+            foreach (var reaction in reactions)
+            {
+                var userInfo = _context.Users.SingleOrDefault(user => user.Id == reaction.UserId);
+                var r = new { Reaction = reaction, UserName = userInfo.UserName };
+
+                result.Add(r);
+            }
+
+
+
+            return Ok(result);
         }
         [HttpPost]
         [Authorize]
@@ -91,18 +116,19 @@ namespace BeTraveling.Controllers
                 var currentUser = GetCurrentUser();
                 var sqlParameter = new SqlParameter("@UserId", currentUser.Id);
 
-                var posts = _context.Posts.FromSqlInterpolated($"(SELECT * FROM posts WHERE posts.UserId IN ((SELECT userId2 from friends Where UserId1 = {sqlParameter} AND Status = 0 ) Union (SELECT userId1 from friends Where UserId2 = {sqlParameter} AND Status = 0))) EXCEPT (SELECT * from posts where UserId = {sqlParameter})").ToList();
+                var posts = _context.Posts.FromSqlInterpolated($"SELECT * FROM posts WHERE (posts.UserId IN ((SELECT userId2 from friends Where UserId1 = {sqlParameter} AND Status = 0 ) Union (SELECT userId1 from friends Where UserId2 = {sqlParameter} AND Status = 0)) OR posts.UserId = {sqlParameter}) AND posts.IsDeleted = 'False'").OrderByDescending(post => post.Created).ToList(); //EXCEPT (SELECT * from posts where UserId = {sqlParameter})").ToList();
 
                 var accumulator = new List<object>()
-                .Select(t => new { Post = default(Post), ReactionNumber = default(int), CommentsNumber = default(int) }).ToList();
+                .Select(t => new { Post = default(Post), ReactionNumber = default(int), CommentsNumber = default(int), UserInfo = default(string) }).ToList();
 
                 if (posts != null)
                     foreach (var post in posts)
                     {
                         var reactionsNo = _context.PostReactions.Where(reaction => post.Id == reaction.PostId).Count();
                         var commentsNo = _context.Comments.Where(comment => post.Id == comment.PostId).Count();
+                        var userInfo = _context.Users.SingleOrDefault(user => user.Id == post.UserId);
 
-                        var result = new { Post = post, ReactionNumber = reactionsNo, CommentsNumber = commentsNo };
+                        var result = new { Post = post, ReactionNumber = reactionsNo, CommentsNumber = commentsNo, UserInfo = userInfo.UserName  };
                         accumulator.Add(result);
 
                     }
@@ -124,18 +150,23 @@ namespace BeTraveling.Controllers
             try
             {
                 var currentUser = GetCurrentUser();
-                var posts = _context.Posts.Where(post => post.UserId == currentUser.Id).ToList();
+                var posts = _context.Posts.Where(post => post.UserId == currentUser.Id && post.IsDeleted==false).OrderByDescending(post => post.Created).ToList();
 
+                /*      var accumulator = new List<object>()
+                      .Select(t => new { Post = default(Post), ReactionNumber = default(int), CommentsNumber = default(int) }).ToList();*/
                 var accumulator = new List<object>()
-                .Select(t => new { Post = default(Post), ReactionNumber = default(int), CommentsNumber = default(int) }).ToList();
+            .Select(t => new { Post = default(Post), ReactionNumber = default(int), CommentsNumber = default(int), UserInfo = default(string) }).ToList();
 
                 if (posts != null)
                     foreach (var post in posts)
                     {
                         var reactionsNo = _context.PostReactions.Where(reaction => post.Id == reaction.PostId).Count();
                         var commentsNo = _context.Comments.Where(comment => post.Id == comment.PostId).Count();
+                       /* var userInfo = _context.Users.SingleOrDefault(user => user.Id == post.UserId);*/
 
-                        var result = new { Post = post, ReactionNumber = reactionsNo, CommentsNumber = commentsNo };
+                        var result = new { Post = post, ReactionNumber = reactionsNo, CommentsNumber = commentsNo, UserInfo = currentUser.UserName };
+
+                       /* var result = new { Post = post, ReactionNumber = reactionsNo, CommentsNumber = commentsNo };*/
                         accumulator.Add(result);
 
                     }
@@ -148,6 +179,76 @@ namespace BeTraveling.Controllers
             }
 
         }
+
+        [HttpPost]
+        [Authorize]
+        [Route("remove/{id}")]
+        public async Task<IActionResult> RemovePost(int id)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+            {
+                return BadRequest("User was not found");
+            }
+            var post = _context.Posts.SingleOrDefault(post => (post.Id == id && post.UserId == currentUser.Id));
+            if (post == null)
+            {
+                return BadRequest("There is no such post");
+            }
+            post.IsDeleted = true;
+            await _context.SaveChangesAsync();
+
+            return Ok("Post has been removed");
+        }
+
+        [HttpPost]
+        [Authorize]
+        [Route("update/{id}")]
+        public async Task<IActionResult> UpdatePost(int id, [FromBody] Post post)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+            {
+                return BadRequest("User was not found");
+            }
+            var postOld = _context.Posts.SingleOrDefault(post => (post.Id == id && post.UserId == currentUser.Id));
+            if (postOld == null)
+            {
+                return BadRequest("There is no such post");
+            }
+            if (!post.Text.Equals(""))
+            {
+                postOld.Text = post.Text;
+
+            }
+            if (!post.Title.Equals(""))
+            {
+                postOld.Title = post.Title;
+
+            }
+            await _context.SaveChangesAsync();
+            return Ok("Post has been modified");
+        }
+
+        [HttpGet]
+        [Authorize]
+        [Route("{id}")]
+        public async Task<IActionResult> GetPost(int id)
+        {
+            var currentUser = GetCurrentUser();
+            if (currentUser == null)
+            {
+                return BadRequest("User was not found");
+            }
+            var post = _context.Posts.SingleOrDefault(post => post.Id==id && post.UserId == currentUser.Id);
+            if(post == null)
+            {
+                return BadRequest("Post was not found");
+            }
+            return Ok(post);
+
+        }
+
         private User GetCurrentUser()
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;

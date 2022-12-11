@@ -5,6 +5,8 @@ import {faCheck, faTimes, faInfoCircle} from "@fortawesome/free-solid-svg-icons"
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import axios from './api/axios';
 import Login from './Login';
+import betraveling from './images/betraveling.png';
+
 
 import {
         BrowserRouter as Router,
@@ -90,8 +92,12 @@ const Register = () =>{
             ):
             (
 
+        <div className="login">
 
+                <img id="icon" src={betraveling} height={50}/>
+                <span id="brand">Be traveling</span>
         <section>
+
             <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
             <h1>Register</h1>
             <form onSubmit={handleSubmit}>
@@ -179,6 +185,7 @@ const Register = () =>{
                 </span>
             </p>
         </section>
+        </div>
 
             )}
         </>

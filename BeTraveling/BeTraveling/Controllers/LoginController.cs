@@ -34,6 +34,10 @@ namespace BeTraveling.Controllers
                 {
                     return BadRequest("Username or password is incorrect");
                 }
+                if(dbUser.Status == 2)
+                {
+                    return BadRequest("User has been banned!");
+                }
                 List<Claim> autClaims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, dbUser.UserName),

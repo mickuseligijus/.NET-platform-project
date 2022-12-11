@@ -1,18 +1,26 @@
-import {userRef, useState, useEffect, useRef, useContext} from 'react';
-import AuthContext from "./context/AuthProvider";
+import {userRef, useState, useEffect, useRef} from 'react';
+import useAuth from './hooks/useAuth';
 import axios from './api/axios';
+import {Link, useNavigate, useLocation} from "react-router-dom";
+import betraveling from './images/betraveling.png';
+
 
 const LOGIN_URL = "/login/Login";
 
 const Login = () =>{
-    const {setAuth} = useContext(AuthContext);
+    const {setAuth} = useAuth();
+
+    const navigate = useNavigate();
+    const location = useLocation();
+    const from = location.state?.from?.pathname || "/";
+
+
     const userRef = useRef();
     const errRef = useRef();
 
     const [user, setUser] = useState('');
     const[pwd, setPwd] = useState('');
     const[errMsg, setErrMsg] = useState('');
-    const[success, setSuccess] = useState(false);
 
     useEffect(() => {
         userRef.current.focus();
@@ -38,8 +46,8 @@ const Login = () =>{
                     setAuth({user,pwd,accessToken});
                     setUser('');
                     setPwd('');
-                    setSuccess(true);
-                    console.log(response.data);
+                    navigate(from,{replace:true});
+                    console.log(response.data); 
                 }
             })
             .catch(function(error){
@@ -52,7 +60,12 @@ const Login = () =>{
 
     }
     return (
+        <div className='login'>
+            <img id="icon" src={betraveling} height={50}/>
+            <span id="brand">Be traveling</span>
+
         <section>
+
             <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>
             <h1>Sign in</h1>
             <form onSubmit={handleSubmit}>
@@ -84,6 +97,7 @@ const Login = () =>{
                 </span>
             </p>
         </section>
+        </div>
     );
 }
 
